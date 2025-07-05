@@ -24,10 +24,25 @@ exports.getTransactions = async (req, res) => {
 exports.getSummary = async (req, res) => {
   const result = await Transaction.aggregate([
     { $match: { userId: req.user._id } },
-    { $group: { _id: "$category", total: { $sum: "$amount" } } }
+    { $group: { _id: "$type", total: { $sum: "$amount" } } }
   ]);
-  res.json(result);
+
+  const summary = {
+    totalIncome: 0,
+    totalExpenses: 0,
+    netIncome: 0,
+  };
+
+  result.forEach((entry) => {
+    if (entry._id === 'income') summary.totalIncome = entry.total;
+    if (entry._id === 'expense') summary.totalExpenses = entry.total;
+  });
+
+  summary.netIncome = summary.totalIncome - summary.totalExpenses;
+
+  res.json(summary);
 };
+
 
 exports.updateTransaction = async (req, res) => {
   const updated = await Transaction.findOneAndUpdate(
@@ -46,4 +61,38 @@ exports.deleteTransaction = async (req, res) => {
   });
   if (!deleted) return res.status(404).json({ message: 'Transaction not found' });
   res.json({ message: 'Transaction deleted successfully' });
+};
+
+exports.getDailyExpenses = async (req, res) => {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // Last 7 days
+
+    const data = await Transaction.aggregate([
+      {
+        $match: {
+          userId: req.user._id,
+          type: 'expense',
+          date: { $gte: sevenDaysAgo }
+        }
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          amount: { $sum: "$amount" }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    const result = data.map(item => ({
+      date: item._id,
+      amount: item.amount
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error('Error in getDailyExpenses:', err);
+    res.status(500).json({ message: 'Server Error' });
+  }
 };

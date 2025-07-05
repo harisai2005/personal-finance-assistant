@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
-import { login, register } from '../services/authService';
+import { login as apiLogin, register } from '../services/authService'; // ✅ renamed to avoid clash
 import { useNavigate } from 'react-router-dom';
 import { Container, Form, Button, Card } from 'react-bootstrap';
-import CustomNavbar from '../components/NavBar'; // ✅ import Navbar
+import CustomNavbar from '../components/CustomNavBar';
 import '../styles/AuthPage.css';
+import { useAuth } from '../context/AuthContext'; // ✅ import context
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth(); // ✅ get context login method
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = isLogin ? await login(form) : await register(form);
-      localStorage.setItem('token', res.data.token);
+      const res = isLogin ? await apiLogin(form) : await register(form); // ✅ use renamed api login
+      const token = res.data.token;
+      authLogin(token); // ✅ set token in context + storage
       navigate('/');
     } catch (err) {
       alert(err?.response?.data?.message || 'Authentication failed');
@@ -31,7 +34,9 @@ const AuthPage = () => {
       <CustomNavbar />
       <div className="auth-container">
         <Card className="auth-card shadow">
-          <h2 className="auth-title mb-4">{isLogin ? 'Login to your account' : 'Create a new account'}</h2>
+          <h2 className="auth-title mb-4">
+            {isLogin ? 'Login to your account' : 'Create a new account'}
+          </h2>
           <Form onSubmit={handleSubmit}>
             {!isLogin && (
               <Form.Group className="mb-3">
