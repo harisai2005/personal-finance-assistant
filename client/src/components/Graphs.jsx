@@ -26,21 +26,13 @@ const Graphs = () => {
         const categoryRes = await API.get('/transactions/summary');
         const dailyRes = await API.get('/transactions/daily');
 
-        // ✅ Handle both array and object summary response
-        const rawSummary = categoryRes.data;
-        let categoryFormatted = [];
-
-        if (Array.isArray(rawSummary)) {
-          categoryFormatted = rawSummary.map(item => ({
-            category: item._id || item.category || 'Unknown',
+        // ✅ Get only the category breakdown for pie chart
+        const categoryFormatted = categoryRes.data.categoryBreakdown
+          .filter((item) => item.total > 0)
+          .map((item) => ({
+            category: item._id || 'Unknown',
             value: item.total,
           }));
-        } else {
-          categoryFormatted = Object.entries(rawSummary).map(([category, value]) => ({
-            category,
-            value
-          }));
-        }
 
         setCategoryData(categoryFormatted);
         setDailyData(dailyRes.data || []);
@@ -69,10 +61,12 @@ const Graphs = () => {
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
-                label={({ category, value }) => `${category}: ${formatINR(value)}`}
+                label={({ category, value }) =>
+                  `${category}: ${formatINR(value)}`
+                }
               >
                 {categoryData.map((_, index) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip formatter={(value) => formatINR(value)} />

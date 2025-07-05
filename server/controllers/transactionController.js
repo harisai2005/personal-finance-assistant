@@ -21,27 +21,61 @@ exports.getTransactions = async (req, res) => {
   res.json(transactions);
 };
 
+// controllers/transactionController.js
 exports.getSummary = async (req, res) => {
-  const result = await Transaction.aggregate([
-    { $match: { userId: req.user._id } },
-    { $group: { _id: "$type", total: { $sum: "$amount" } } }
-  ]);
+  try {
+    // Group by category for only expenses
+    const categoryBreakdown = await Transaction.aggregate([
+      {
+        $match: {
+          userId: req.user._id,
+          type: 'expense', // ✅ Only expenses
+        },
+      },
+      {
+        $group: {
+          _id: '$category',
+          total: { $sum: '$amount' },
+        },
+      },
+    ]);
 
-  const summary = {
-    totalIncome: 0,
-    totalExpenses: 0,
-    netIncome: 0,
-  };
+    // Overall income vs expense summary
+    const totals = await Transaction.aggregate([
+      {
+        $match: {
+          userId: req.user._id,
+        },
+      },
+      {
+        $group: {
+          _id: '$type',
+          total: { $sum: '$amount' },
+        },
+      },
+    ]);
 
-  result.forEach((entry) => {
-    if (entry._id === 'income') summary.totalIncome = entry.total;
-    if (entry._id === 'expense') summary.totalExpenses = entry.total;
-  });
+    const summary = {
+      totalIncome: 0,
+      totalExpenses: 0,
+      netIncome: 0,
+      categoryBreakdown,
+    };
 
-  summary.netIncome = summary.totalIncome - summary.totalExpenses;
+    totals.forEach((entry) => {
+      if (entry._id === 'income') summary.totalIncome = entry.total;
+      if (entry._id === 'expense') summary.totalExpenses = entry.total;
+    });
 
-  res.json(summary);
+    summary.netIncome = summary.totalIncome - summary.totalExpenses;
+
+    res.json(summary);
+  } catch (err) {
+    console.error("❌ getSummary error:", err);
+    res.status(500).json({ message: "Server Error" });
+  }
 };
+
 
 
 exports.updateTransaction = async (req, res) => {
