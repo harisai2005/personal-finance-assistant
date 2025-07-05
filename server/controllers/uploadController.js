@@ -3,15 +3,18 @@ const path = require('path');
 console.log('✅ uploadController loaded');
 const extractFromReceipt = require('../utils/extractFromReceipt');
 
-// Upload receipt and return extracted dummy data
 const uploadReceipt = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // This function returns static transaction data
-    const extractedData = await extractFromReceipt(req.file.path);
+    const userId = req.user && req.user._id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized: User not found' });
+    }
+
+    const extractedData = await extractFromReceipt(req.file.path, userId);
 
     res.status(200).json({ extractedData });
   } catch (error) {
@@ -21,5 +24,3 @@ const uploadReceipt = async (req, res) => {
 };
 
 module.exports = { uploadReceipt };
-
-

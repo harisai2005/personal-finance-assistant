@@ -47,7 +47,9 @@ const HomePage = () => {
         console.log("✅ Parsed Summary ->", { income, expenses, net });
 
         setSummary({ income, expenses, net });
-        setTransactions(txnRes?.data?.slice(0, 3) || []);
+
+        // Store full transactions
+        setTransactions(txnRes?.data || []);
       } catch (err) {
         console.error("❌ Fetch error:", err?.response?.data || err.message);
         alert("Session expired. Please login again.");
@@ -94,7 +96,7 @@ const HomePage = () => {
             <Card.Header><strong>Recent Transactions</strong></Card.Header>
             <Card.Body>
               <ListGroup>
-                {transactions.map((t, i) => (
+                {transactions.slice(0, 3).map((t, i) => (
                   <ListGroup.Item key={i} className="d-flex justify-content-between">
                     <div>
                       <strong>{t.description || "No description"}</strong>
@@ -118,8 +120,11 @@ const HomePage = () => {
               <Button className="w-100 mb-2" variant="info" onClick={() => navigate("/add")}>
                 ➕ Add New Transaction
               </Button>
-              <Button className="w-100" variant="outline-dark" onClick={() => navigate("/analytics")}>
+              <Button className="w-100 mb-2" variant="info" onClick={() => navigate("/analytics")}>
                 📊 View Analytics
+              </Button>
+              <Button className="w-100 mb-2" variant="info" onClick={() => navigate("/transactions")}>
+                📁 View Transactions
               </Button>
             </Card.Body>
           </Card>

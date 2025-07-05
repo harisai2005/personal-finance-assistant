@@ -7,7 +7,7 @@ const AnalyticsPage = () => {
     <Container className="mt-4">
       <Card className="shadow-sm p-4">
         <h4>Analytics</h4>
-        <p className="text-muted">Track your income vs expenses visually</p>
+        <p className="text-muted">Track your expenses visually</p>
         <Graphs />
       </Card>
     </Container>
