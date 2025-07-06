@@ -1,3 +1,4 @@
+// backend/controllers/uploadController.js
 const fs = require('fs');
 const path = require('path');
 console.log('✅ uploadController loaded');
@@ -14,9 +15,15 @@ const uploadReceipt = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized: User not found' });
     }
 
-    const extractedData = await extractFromReceipt(req.file.path, userId);
+    const mode = req.body.mode || 'pos'; // new line to get the mode
 
-    res.status(200).json({ extractedData });
+    const extractedTransactions = await extractFromReceipt(req.file.path, userId, mode);
+
+    res.status(200).json({
+      message: 'Receipt processed successfully',
+      extractedData: extractedTransactions.length === 1 ? extractedTransactions[0] : null,
+      insertedCount: extractedTransactions.length,
+    });
   } catch (error) {
     console.error('❌ Receipt upload error:', error.message);
     res.status(500).json({ message: 'Failed to process receipt' });

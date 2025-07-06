@@ -1,3 +1,4 @@
+// src/pages/AddTransactionPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Container, Form, Button, Card, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
@@ -13,12 +14,12 @@ const AddTransactionPage = () => {
     description: '',
     date: '',
   });
-
   const [receiptFile, setReceiptFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [mode, setMode] = useState('pos'); // 'pos' | 'history'
 
   useEffect(() => {
     const saved = localStorage.getItem('edit_txn');
@@ -64,7 +65,6 @@ const AddTransactionPage = () => {
       }
       navigate('/');
     } catch (err) {
-      console.error(err);
       setError(isEditing ? 'Failed to update transaction.' : 'Failed to add transaction.');
     }
   };
@@ -73,20 +73,22 @@ const AddTransactionPage = () => {
     if (!receiptFile) return alert("Please select a receipt to upload.");
     setUploading(true);
     try {
-      const res = await uploadReceipt(receiptFile);
-      const data = res.data.extractedData;
-
-      setForm({
-        ...form,
-        amount: data.amount || '',
-        category: data.category || '',
-        description: data.description || '',
-        date: data.date ? new Date(data.date).toISOString().split('T')[0] : '',
-        type: 'expense',
-      });
+      const res = await uploadReceipt(receiptFile, mode);
+      if (mode === 'history') {
+        alert(`✅ ${res.data.insertedCount || 0} transactions added.`);
+      } else {
+        const data = res.data.extractedData;
+        setForm({
+          ...form,
+          amount: data.amount || '',
+          category: data.category || '',
+          description: data.description || '',
+          date: data.date ? new Date(data.date).toISOString().split('T')[0] : '',
+          type: 'expense',
+        });
+      }
     } catch (err) {
       alert("Failed to extract from receipt.");
-      console.error(err);
     } finally {
       setUploading(false);
     }
@@ -100,17 +102,24 @@ const AddTransactionPage = () => {
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
             <Form.Label>Upload Receipt (optional)</Form.Label>
-            <Form.Control
-              type="file"
-              accept="image/*,.pdf"
-              onChange={(e) => setReceiptFile(e.target.files[0])}
-            />
-            <Button
-              className="mt-2"
-              variant="outline-primary"
-              onClick={handleReceiptUpload}
-              disabled={uploading}
-            >
+            <Form.Control type="file" accept="image/*,.pdf" onChange={(e) => setReceiptFile(e.target.files[0])} />
+            <div className="mt-2">
+              <Form.Check
+                type="radio"
+                inline
+                label="POS Receipt"
+                checked={mode === 'pos'}
+                onChange={() => setMode('pos')}
+              />
+              <Form.Check
+                type="radio"
+                inline
+                label="Transaction History"
+                checked={mode === 'history'}
+                onChange={() => setMode('history')}
+              />
+            </div>
+            <Button className="mt-2" variant="outline-primary" onClick={handleReceiptUpload} disabled={uploading}>
               {uploading ? "Extracting..." : "Extract from Receipt"}
             </Button>
           </Form.Group>
@@ -119,7 +128,6 @@ const AddTransactionPage = () => {
             <Form.Label>Amount</Form.Label>
             <Form.Control type="number" name="amount" value={form.amount} onChange={handleChange} required />
           </Form.Group>
-
           <Form.Group className="mb-3">
             <Form.Label>Type</Form.Label>
             <Form.Select name="type" value={form.type} onChange={handleChange}>
@@ -127,17 +135,14 @@ const AddTransactionPage = () => {
               <option value="expense">Expense</option>
             </Form.Select>
           </Form.Group>
-
           <Form.Group className="mb-3">
             <Form.Label>Category</Form.Label>
             <Form.Control type="text" name="category" value={form.category} onChange={handleChange} required />
           </Form.Group>
-
           <Form.Group className="mb-3">
             <Form.Label>Description</Form.Label>
             <Form.Control type="text" name="description" value={form.description} onChange={handleChange} required />
           </Form.Group>
-
           <Form.Group className="mb-3">
             <Form.Label>Date</Form.Label>
             <Form.Control type="date" name="date" value={form.date} onChange={handleChange} required />

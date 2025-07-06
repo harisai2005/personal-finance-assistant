@@ -1,3 +1,4 @@
+// backend/utils/extractFromReceipt.js
 const fs = require('fs');
 const path = require('path');
 const pdfParse = require('pdf-parse');
@@ -61,7 +62,30 @@ const extractTextFromImage = async (filePath) => {
   return await runOCR(imageBuffer);
 };
 
-const buildGeminiPrompt = (text) => `
+const buildGeminiPrompt = (text, mode) => {
+  if (mode === 'history') {
+    return `
+You are a helpful transaction parser. Given a bank statement or table of transactions, extract the data into the following JSON array format:
+
+[
+  {
+    "date": "YYYY-MM-DD",
+    "description": "string",
+    "category": "string",
+    "amount": number,
+    "type": "income" | "expense"
+  },
+  ...
+]
+
+Extract accurately.
+
+Text:
+"""${text}"""
+`.trim();
+  }
+
+  return `
 You are a helpful receipt parser. Given the OCR-extracted or raw text below, extract and return the structured JSON:
 
 {
@@ -76,22 +100,20 @@ You are a helpful receipt parser. Given the OCR-extracted or raw text below, ext
 Receipt Text:
 """${text}"""
 `.trim();
-
-const cleanJSONResponse = (rawText) => {
-  return rawText
-    .replace(/```json/g, '')
-    .replace(/```/g, '')
-    .trim();
 };
 
-const sendToGemini = async (text) => {
+const cleanJSONResponse = (rawText) => {
+  return rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+};
+
+const sendToGemini = async (text, mode) => {
   try {
     console.log("📤 Sending to Gemini via official SDK...");
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const prompt = buildGeminiPrompt(text);
+    const prompt = buildGeminiPrompt(text, mode);
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const geminiText = response.text();
@@ -101,12 +123,12 @@ const sendToGemini = async (text) => {
     return JSON.parse(clean);
   } catch (err) {
     console.error("❌ Gemini API Error:", err.message);
-    return {};
+    return mode === 'history' ? [] : {};
   }
 };
 
 // ✅ Main Extraction Handler
-module.exports = async function extractFromReceipt(filePath, userId) {
+module.exports = async function extractFromReceipt(filePath, userId, mode = 'pos') {
   try {
     let text = '';
 
@@ -123,7 +145,25 @@ module.exports = async function extractFromReceipt(filePath, userId) {
       throw new Error('Only PDF or image files supported.');
     }
 
-    const parsed = await sendToGemini(text);
+    const parsed = await sendToGemini(text, mode);
+
+    if (mode === 'history') {
+      if (!Array.isArray(parsed)) throw new Error('Invalid transaction array from Gemini');
+
+      const docs = await Promise.all(parsed.map(async (txn) => {
+        const created = await Transaction.create({
+          userId,
+          ...txn,
+          date: txn.date ? new Date(txn.date) : new Date(),
+        });
+        return created;
+      }));
+
+      console.log(`✅ Inserted ${docs.length} transactions from history`);
+      return docs;
+    }
+
+    // POS mode
     const vendor = parsed.vendor || 'Unknown';
     const invoiceDate = new Date(parsed.invoice_date || Date.now());
     const totalAmount = parsed.total_amount || 0;

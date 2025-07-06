@@ -63,10 +63,10 @@ const HomePage = () => {
     <Container className="mt-4">
       <Row className="mb-3">
         <Col md={3}>
-          <StatCard title="Total Income" value={formatINR(summary.income)} icon={<ArrowUpRight />} />
+          <StatCard title="Total Income" value={formatINR(summary.income)} icon={<ArrowDownLeft />} />
         </Col>
         <Col md={3}>
-          <StatCard title="Total Expenses" value={formatINR(summary.expenses)} icon={<ArrowDownLeft />} />
+          <StatCard title="Total Expenses" value={formatINR(summary.expenses)} icon={<ArrowUpRight />} />
         </Col>
         <Col md={3}>
           <StatCard title="Net Income" value={formatINR(summary.net)} icon={<Wallet />} />
