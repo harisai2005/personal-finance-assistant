@@ -14,28 +14,21 @@ const AuthPage = () => {
   const { login: authLogin } = useAuth();
 
   const validate = () => {
-    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      return 'Please enter a valid email address.';
-    }
-    if (form.password.length < 6) {
-      return 'Password must be at least 6 characters.';
-    }
-    if (!isLogin && form.name.trim() === '') {
-      return 'Name is required for registration.';
-    }
+    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) return 'Please enter a valid email.';
+    if (form.password.length < 6) return 'Password must be at least 6 characters.';
+    if (!isLogin && form.name.trim() === '') return 'Name is required.';
     return null;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationError = validate();
-    if (validationError) return setError(validationError);
+    const err = validate();
+    if (err) return setError(err);
     setError('');
 
     try {
       const res = isLogin ? await apiLogin(form) : await register(form);
-      const token = res.data.token;
-      authLogin(token);
+      authLogin(res.data.token);
       navigate('/');
     } catch (err) {
       setError(err?.response?.data?.message || 'Authentication failed');
@@ -43,7 +36,7 @@ const AuthPage = () => {
   };
 
   const toggleMode = () => {
-    setIsLogin((prev) => !prev);
+    setIsLogin(prev => !prev);
     setForm({ name: '', email: '', password: '' });
     setError('');
   };
@@ -53,9 +46,7 @@ const AuthPage = () => {
       <CustomNavbar />
       <div className="auth-container">
         <Card className="auth-card shadow">
-          <h2 className="auth-title mb-4">
-            {isLogin ? 'Login to your account' : 'Create a new account'}
-          </h2>
+          <h2 className="auth-title mb-4">{isLogin ? 'Login to your account' : 'Create a new account'}</h2>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
             {!isLogin && (

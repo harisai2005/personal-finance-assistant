@@ -1,7 +1,7 @@
-// tests/auth.integration.test.js
 const request = require('supertest');
 const createTestServer = require('./testServer');
 require('./setup');
+
 process.env.JWT_SECRET = 'hari_secret_2025';
 
 let server;
@@ -12,7 +12,7 @@ beforeAll(async () => {
   await new Promise(resolve => {
     server = app.listen(0, resolve);
   });
-  global.agent = request.agent(server);
+  global.agent = request.agent(server); // Shared agent for all requests
 });
 
 afterAll(async () => {
@@ -32,12 +32,14 @@ describe('🔐 Auth API Integration', () => {
   });
 
   it('should not allow duplicate registration', async () => {
+    // Register first
     await global.agent.post('/api/auth/register').send({
       name: 'Test User',
       email: 'test@example.com',
       password: 'password123',
     });
 
+    // Try registering again
     const res = await global.agent.post('/api/auth/register').send({
       name: 'Test User',
       email: 'test@example.com',

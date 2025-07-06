@@ -1,23 +1,34 @@
 const Transaction = require('../models/transaction');
 
+/**
+ * Adds a new transaction for the authenticated user
+ */
 exports.addTransaction = async (req, res) => {
-  const { type, category, amount } = req.body;
-  if (!type || !category || amount == null) {
-    return res.status(400).json({ error: 'Type, category, and amount are required.' });
+  try {
+    const { type, category, amount } = req.body;
+
+    if (!type || !category || amount == null) {
+      return res.status(400).json({ error: 'Type, category, and amount are required.' });
+    }
+
+    const transaction = await Transaction.create({ ...req.body, userId: req.user._id });
+    res.status(201).json(transaction);
+  } catch (err) {
+    console.error('❌ Add transaction error:', err);
+    res.status(500).json({ message: 'Server error while adding transaction' });
   }
-  const transaction = await Transaction.create({ ...req.body, userId: req.user._id });
-  res.status(201).json(transaction);
 };
 
+/**
+ * Retrieves paginated transactions in a given date range
+ */
 exports.getTransactions = async (req, res) => {
   try {
     const { start, end, page = 1, limit = 10 } = req.query;
 
     const filter = {
       userId: req.user._id,
-      ...(start && end && {
-        date: { $gte: new Date(start), $lte: new Date(end) }
-      })
+      ...(start && end && { date: { $gte: new Date(start), $lte: new Date(end) } }),
     };
 
     const total = await Transaction.countDocuments(filter);
@@ -30,48 +41,29 @@ exports.getTransactions = async (req, res) => {
       data: transactions,
       currentPage: Number(page),
       totalPages: Math.ceil(total / limit),
-      totalCount: total // ✅ Return total count explicitly
+      totalCount: total
     });
   } catch (err) {
-    console.error("❌ getTransactions error:", err);
-    res.status(500).json({ message: 'Server Error' });
+    console.error('❌ Get transactions error:', err);
+    res.status(500).json({ message: 'Server error while fetching transactions' });
   }
 };
 
-
-
-// controllers/transactionController.js
+/**
+ * Returns category-wise and income-expense summary for user
+ */
 exports.getSummary = async (req, res) => {
   try {
-    // Group by category for only expenses
+    const userId = req.user._id;
+
     const categoryBreakdown = await Transaction.aggregate([
-      {
-        $match: {
-          userId: req.user._id,
-          type: 'expense', // ✅ Only expenses
-        },
-      },
-      {
-        $group: {
-          _id: '$category',
-          total: { $sum: '$amount' },
-        },
-      },
+      { $match: { userId, type: 'expense' } },
+      { $group: { _id: '$category', total: { $sum: '$amount' } } },
     ]);
 
-    // Overall income vs expense summary
     const totals = await Transaction.aggregate([
-      {
-        $match: {
-          userId: req.user._id,
-        },
-      },
-      {
-        $group: {
-          _id: '$type',
-          total: { $sum: '$amount' },
-        },
-      },
+      { $match: { userId } },
+      { $group: { _id: '$type', total: { $sum: '$amount' } } },
     ]);
 
     const summary = {
@@ -81,45 +73,66 @@ exports.getSummary = async (req, res) => {
       categoryBreakdown,
     };
 
-    totals.forEach((entry) => {
-      if (entry._id === 'income') summary.totalIncome = entry.total;
-      if (entry._id === 'expense') summary.totalExpenses = entry.total;
+    totals.forEach(({ _id, total }) => {
+      if (_id === 'income') summary.totalIncome = total;
+      else if (_id === 'expense') summary.totalExpenses = total;
     });
 
     summary.netIncome = summary.totalIncome - summary.totalExpenses;
 
     res.json(summary);
   } catch (err) {
-    console.error("❌ getSummary error:", err);
-    res.status(500).json({ message: "Server Error" });
+    console.error('❌ Get summary error:', err);
+    res.status(500).json({ message: 'Server error while generating summary' });
   }
 };
 
-
-
+/**
+ * Updates an existing transaction
+ */
 exports.updateTransaction = async (req, res) => {
-  const updated = await Transaction.findOneAndUpdate(
-    { _id: req.params.id, userId: req.user._id },
-    req.body,
-    { new: true }
-  );
-  if (!updated) return res.status(404).json({ message: 'Transaction not found' });
-  res.json(updated);
+  try {
+    const updated = await Transaction.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      req.body,
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ message: 'Transaction not found' });
+
+    res.json(updated);
+  } catch (err) {
+    console.error('❌ Update transaction error:', err);
+    res.status(500).json({ message: 'Server error while updating transaction' });
+  }
 };
 
+/**
+ * Deletes a transaction by ID
+ */
 exports.deleteTransaction = async (req, res) => {
-  const deleted = await Transaction.findOneAndDelete({
-    _id: req.params.id,
-    userId: req.user._id,
-  });
-  if (!deleted) return res.status(404).json({ message: 'Transaction not found' });
-  res.json({ message: 'Transaction deleted successfully' });
+  try {
+    const deleted = await Transaction.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
+
+    if (!deleted) return res.status(404).json({ message: 'Transaction not found' });
+
+    res.json({ message: 'Transaction deleted successfully' });
+  } catch (err) {
+    console.error('❌ Delete transaction error:', err);
+    res.status(500).json({ message: 'Server error while deleting transaction' });
+  }
 };
 
+/**
+ * Returns last 7 days daily expenses
+ */
 exports.getDailyExpenses = async (req, res) => {
   try {
     const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // Last 7 days
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
     const data = await Transaction.aggregate([
       {
@@ -138,14 +151,11 @@ exports.getDailyExpenses = async (req, res) => {
       { $sort: { _id: 1 } }
     ]);
 
-    const result = data.map(item => ({
-      date: item._id,
-      amount: item.amount
-    }));
+    const result = data.map(item => ({ date: item._id, amount: item.amount }));
 
     res.json(result);
   } catch (err) {
-    console.error('Error in getDailyExpenses:', err);
-    res.status(500).json({ message: 'Server Error' });
+    console.error('❌ Daily expenses error:', err);
+    res.status(500).json({ message: 'Server error while fetching daily expenses' });
   }
 };

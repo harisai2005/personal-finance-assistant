@@ -1,6 +1,5 @@
-// src/pages/AddTransactionPage.jsx
 import React, { useState, useEffect } from 'react';
-import { Container, Form, Button, Card, Alert } from 'react-bootstrap';
+import { Container, Form, Button, Card, Alert, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { addTransaction, updateTransaction } from '../services/transactionService';
 import { uploadReceipt } from '../services/uploadService';
@@ -19,7 +18,9 @@ const AddTransactionPage = () => {
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [mode, setMode] = useState('pos'); // 'pos' | 'history'
+  const [mode, setMode] = useState('pos');
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
 
   useEffect(() => {
     const saved = localStorage.getItem('edit_txn');
@@ -63,7 +64,7 @@ const AddTransactionPage = () => {
       } else {
         await addTransaction(form);
       }
-      navigate('/');
+      navigate('/transactions'); // Redirect to transaction list after adding/updating
     } catch (err) {
       setError(isEditing ? 'Failed to update transaction.' : 'Failed to add transaction.');
     }
@@ -75,7 +76,8 @@ const AddTransactionPage = () => {
     try {
       const res = await uploadReceipt(receiptFile, mode);
       if (mode === 'history') {
-        alert(`✅ ${res.data.insertedCount || 0} transactions added.`);
+        setModalMessage(`✅ ${res.data.insertedCount || 0} transactions added.`);
+        setShowModal(true);
       } else {
         const data = res.data.extractedData;
         setForm({
@@ -86,12 +88,19 @@ const AddTransactionPage = () => {
           date: data.date ? new Date(data.date).toISOString().split('T')[0] : '',
           type: 'expense',
         });
+        setModalMessage('✅ POS transaction extracted successfully.');
+        setShowModal(true);
       }
     } catch (err) {
       alert("Failed to extract from receipt.");
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    navigate('/transactions'); // 👈 Redirect to transaction list after modal close
   };
 
   return (
@@ -153,6 +162,16 @@ const AddTransactionPage = () => {
           </Button>
         </Form>
       </Card>
+
+      <Modal show={showModal} onHide={handleModalClose} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Receipt Upload</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{modalMessage}</Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={handleModalClose}>OK</Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

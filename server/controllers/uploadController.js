@@ -1,21 +1,21 @@
-// backend/controllers/uploadController.js
-const fs = require('fs');
-const path = require('path');
-console.log('✅ uploadController loaded');
 const extractFromReceipt = require('../utils/extractFromReceipt');
 
+/**
+ * Handles file upload and sends it for data extraction.
+ * Accepts a mode: 'pos' or 'history'
+ */
 const uploadReceipt = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    const userId = req.user && req.user._id;
+    const userId = req.user?._id;
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized: User not found' });
     }
 
-    const mode = req.body.mode || 'pos'; // new line to get the mode
+    const mode = req.body.mode || 'pos';
 
     const extractedTransactions = await extractFromReceipt(req.file.path, userId, mode);
 

@@ -20,16 +20,16 @@ const Graphs = () => {
       maximumFractionDigits: 0,
     }).format(value);
 
+  // Fetch summary and daily data
   useEffect(() => {
     const fetchData = async () => {
       try {
         const categoryRes = await API.get('/transactions/summary');
         const dailyRes = await API.get('/transactions/daily');
 
-        // ✅ Get only the category breakdown for pie chart
         const categoryFormatted = categoryRes.data.categoryBreakdown
-          .filter((item) => item.total > 0)
-          .map((item) => ({
+          .filter(item => item.total > 0)
+          .map(item => ({
             category: item._id || 'Unknown',
             value: item.total,
           }));
@@ -47,6 +47,7 @@ const Graphs = () => {
 
   return (
     <Row>
+      {/* Category Pie Chart */}
       <Col md={6} className="mb-4">
         <h6 className="text-center">Expenses by Category</h6>
         {error ? (
@@ -61,15 +62,13 @@ const Graphs = () => {
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
-                label={({ category, value }) =>
-                  `${category}: ${formatINR(value)}`
-                }
+                label={({ category, value }) => `${category}: ${formatINR(value)}`}
               >
                 {categoryData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => formatINR(value)} />
+              <Tooltip formatter={value => formatINR(value)} />
             </PieChart>
           </ResponsiveContainer>
         ) : (
@@ -77,14 +76,15 @@ const Graphs = () => {
         )}
       </Col>
 
+      {/* Daily Expenses Bar Chart */}
       <Col md={6} className="mb-4">
         <h6 className="text-center">Daily Expenses (Last 7 Days)</h6>
         {dailyData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dailyData}>
               <XAxis dataKey="date" />
-              <YAxis tickFormatter={(value) => formatINR(value)} />
-              <Tooltip formatter={(value) => formatINR(value)} />
+              <YAxis tickFormatter={value => formatINR(value)} />
+              <Tooltip formatter={value => formatINR(value)} />
               <Bar dataKey="amount" fill="#FF4C4C" />
             </BarChart>
           </ResponsiveContainer>

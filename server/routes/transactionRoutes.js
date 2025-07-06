@@ -8,21 +8,46 @@ const {
   getDailyExpenses
 } = require('../controllers/transactionController');
 const protect = require('../middleware/authMiddleware');
-const auth = require('../middleware/authMiddleware'); // Ensure this is the correct path to your auth middleware
-
 
 const router = express.Router();
 
-router.use(protect); // Auth middleware
+// Apply auth middleware to all transaction routes
+router.use(protect);
 
+/**
+ * @route   POST /api/transactions
+ * @desc    Add a new transaction
+ */
 router.post('/', addTransaction);
+
+/**
+ * @route   GET /api/transactions
+ * @desc    Get all transactions (with optional date range and pagination)
+ */
 router.get('/', getTransactions);
+
+/**
+ * @route   GET /api/transactions/summary
+ * @desc    Get income vs expense and category breakdown
+ */
 router.get('/summary', getSummary);
 
-// ✅ Update & Delete routes
+/**
+ * @route   GET /api/transactions/daily
+ * @desc    Get last 7 days daily expenses
+ */
+router.get('/daily', getDailyExpenses);
+
+/**
+ * @route   PUT /api/transactions/:id
+ * @desc    Update a transaction
+ */
 router.put('/:id', updateTransaction);
+
+/**
+ * @route   DELETE /api/transactions/:id
+ * @desc    Delete a transaction
+ */
 router.delete('/:id', deleteTransaction);
-router.get('/daily', auth, getDailyExpenses);
-router.get('/summary', auth, getSummary);
 
 module.exports = router;

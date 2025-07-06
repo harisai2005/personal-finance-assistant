@@ -14,60 +14,43 @@ const CustomNavbar = () => {
     navigate('/auth');
   };
 
+  const navLink = (to, label) => (
+    <Nav.Link
+      as={Link}
+      to={to}
+      active={location.pathname === to}
+      className={location.pathname === to ? 'active-link' : ''}
+    >
+      {label}
+    </Nav.Link>
+  );
+
   return (
     <Navbar bg="light" expand="lg" className="shadow-sm px-3 custom-navbar">
       <Container>
-        <Navbar.Brand as={Link} to="/" className="fw-bold">💼 Personal Finance Assistant</Navbar.Brand>
+        <Navbar.Brand as={Link} to="/" className="fw-bold">
+          💼 Personal Finance Assistant
+        </Navbar.Brand>
         <Navbar.Toggle aria-controls="navbar-nav" />
         <Navbar.Collapse id="navbar-nav">
-          {isLoggedIn ? (
-            <Nav className="ms-auto">
-              <Nav.Link
-                as={Link}
-                to="/"
-                active={location.pathname === '/'}
-                className={location.pathname === '/' ? 'active-link' : ''}
-              >
-                Dashboard
-              </Nav.Link>
-              <Nav.Link
-                as={Link}
-                to="/add"
-                active={location.pathname === '/add'}
-                className={location.pathname === '/add' ? 'active-link' : ''}
-              >
-                Add
-              </Nav.Link>
-              <Nav.Link
-                as={Link}
-                to="/transactions"
-                active={location.pathname === '/transactions'}
-                className={location.pathname === '/transactions' ? 'active-link' : ''}
-              >
-                Transactions
-              </Nav.Link>
-              <Nav.Link
-                as={Link}
-                to="/analytics"
-                active={location.pathname === '/analytics'}
-                className={location.pathname === '/analytics' ? 'active-link' : ''}
-              >
-                Analytics
-              </Nav.Link>
-              <Button variant="outline-danger" className="ms-3" onClick={handleLogout}>
-                Logout
-              </Button>
-            </Nav>
-          ) : (
-            <Nav className="ms-auto">
-              <Nav.Link as={Link} to="/auth" className={location.pathname === '/auth' ? 'active-link' : ''}>
-                Login
-              </Nav.Link>
-              <Nav.Link as={Link} to="/auth" className={location.pathname === '/auth' ? 'active-link' : ''}>
-                Register
-              </Nav.Link>
-            </Nav>
-          )}
+          <Nav className="ms-auto">
+            {isLoggedIn ? (
+              <>
+                {navLink('/', 'Dashboard')}
+                {navLink('/add', 'Add')}
+                {navLink('/transactions', 'Transactions')}
+                {navLink('/analytics', 'Analytics')}
+                <Button variant="outline-danger" className="ms-3" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                {navLink('/auth', 'Login')}
+                {navLink('/auth', 'Register')}
+              </>
+            )}
+          </Nav>
         </Navbar.Collapse>
       </Container>
     </Navbar>

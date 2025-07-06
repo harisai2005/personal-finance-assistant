@@ -6,22 +6,11 @@ jest.mock('../models/user');
 jest.mock('jsonwebtoken');
 
 describe('Auth Controller - Unit', () => {
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  afterEach(() => jest.clearAllMocks());
 
   it('should register a new user', async () => {
-    const req = {
-      body: {
-        name: 'Hari',
-        email: 'hari@example.com',
-        password: 'password123'
-      }
-    };
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn()
-    };
+    const req = { body: { name: 'Hari', email: 'hari@example.com', password: 'password123' } };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
 
     User.findOne.mockResolvedValue(null);
     User.create.mockResolvedValue({ _id: '123', name: 'Hari' });
@@ -36,17 +25,8 @@ describe('Auth Controller - Unit', () => {
   });
 
   it('should not register if user exists', async () => {
-    const req = {
-      body: {
-        name: 'Hari',
-        email: 'hari@example.com',
-        password: 'password123'
-      }
-    };
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn()
-    };
+    const req = { body: { email: 'hari@example.com' } };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
 
     User.findOne.mockResolvedValue({ email: 'hari@example.com' });
 
@@ -57,21 +37,10 @@ describe('Auth Controller - Unit', () => {
   });
 
   it('should login user successfully', async () => {
-    const req = {
-      body: {
-        email: 'hari@example.com',
-        password: 'password123'
-      }
-    };
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn()
-    };
+    const req = { body: { email: 'hari@example.com', password: 'password123' } };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
 
-    const mockUser = {
-      comparePassword: jest.fn().mockResolvedValue(true),
-      _id: 'user123'
-    };
+    const mockUser = { comparePassword: jest.fn().mockResolvedValue(true), _id: 'user123' };
 
     User.findOne.mockResolvedValue(mockUser);
     jwt.sign.mockReturnValue('login-token');
@@ -84,16 +53,8 @@ describe('Auth Controller - Unit', () => {
   });
 
   it('should not login with invalid credentials', async () => {
-    const req = {
-      body: {
-        email: 'hari@example.com',
-        password: 'wrongpass'
-      }
-    };
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn()
-    };
+    const req = { body: { email: 'hari@example.com', password: 'wrongpass' } };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
 
     User.findOne.mockResolvedValue(null);
 

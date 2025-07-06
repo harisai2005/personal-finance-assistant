@@ -3,73 +3,89 @@ const Transaction = require('../models/transaction');
 
 jest.mock('../models/transaction');
 
-describe('Transaction Controller - Unit', () => {
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+describe('💼 Transaction Controller - Unit Tests', () => {
+  afterEach(() => jest.clearAllMocks());
 
-  it('should add a transaction', async () => {
+  it('should add a valid transaction', async () => {
     const req = {
       body: {
         type: 'income',
         category: 'Salary',
         amount: 1000,
-        description: 'Monthly pay'
+        description: 'Monthly pay',
       },
-      user: { _id: 'user123' }
+      user: { _id: 'user123' },
     };
     const res = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      json: jest.fn(),
     };
 
-    const mockTransaction = { ...req.body, userId: 'user123' };
-    Transaction.create.mockResolvedValue(mockTransaction);
+    const mockResult = { ...req.body, userId: req.user._id };
+    Transaction.create.mockResolvedValue(mockResult);
 
     await transactionController.addTransaction(req, res);
 
-    expect(Transaction.create).toHaveBeenCalledWith({ ...req.body, userId: 'user123' });
+    expect(Transaction.create).toHaveBeenCalledWith(mockResult);
     expect(res.status).toHaveBeenCalledWith(201);
-    expect(res.json).toHaveBeenCalledWith(mockTransaction);
+    expect(res.json).toHaveBeenCalledWith(mockResult);
   });
 
-  it('should get user transactions', async () => {
-    const req = {
-      user: { _id: 'user123' },
-      query: {}
-    };
-    const res = {
-      json: jest.fn()
-    };
+  it('should return 400 if required fields are missing', async () => {
+    const req = { body: { type: '', category: '', amount: null }, user: { _id: 'user123' } };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
 
-    const transactions = [{ category: 'Food', amount: 200 }];
+    await transactionController.addTransaction(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Type, category, and amount are required.' });
+  });
+
+  it('should retrieve user transactions', async () => {
+    const req = { user: { _id: 'user123' }, query: {} };
+    const res = { json: jest.fn() };
+
+    const mockData = [{ category: 'Food', amount: 200 }];
+    Transaction.countDocuments.mockResolvedValue(1);
     Transaction.find.mockReturnValue({
-      sort: jest.fn().mockReturnValue(transactions)
+      sort: () => ({
+        skip: () => ({
+          limit: () => mockData,
+        }),
+      }),
     });
 
     await transactionController.getTransactions(req, res);
 
-    expect(Transaction.find).toHaveBeenCalledWith({ userId: 'user123' });
-    expect(res.json).toHaveBeenCalledWith(transactions);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.any(Array),
+        currentPage: expect.any(Number),
+        totalPages: expect.any(Number),
+        totalCount: expect.any(Number),
+      })
+    );
   });
 
-  it('should return summary grouped by category', async () => {
-    const req = {
-      user: { _id: 'user123' }
-    };
-    const res = {
-      json: jest.fn()
-    };
+  it('should return summary including net income', async () => {
+    const req = { user: { _id: 'user123' } };
+    const res = { json: jest.fn() };
 
-    const summary = [{ _id: 'Food', total: 300 }];
-    Transaction.aggregate.mockResolvedValue(summary);
+    Transaction.aggregate
+      .mockResolvedValueOnce([{ _id: 'Food', total: 500 }]) // category breakdown
+      .mockResolvedValueOnce([
+        { _id: 'income', total: 1000 },
+        { _id: 'expense', total: 500 },
+      ]); // income vs expense
 
     await transactionController.getSummary(req, res);
 
-    expect(Transaction.aggregate).toHaveBeenCalledWith([
-      { $match: { userId: 'user123' } },
-      { $group: { _id: "$category", total: { $sum: "$amount" } } }
-    ]);
-    expect(res.json).toHaveBeenCalledWith(summary);
+    expect(Transaction.aggregate).toHaveBeenCalledTimes(2);
+    expect(res.json).toHaveBeenCalledWith({
+      totalIncome: 1000,
+      totalExpenses: 500,
+      netIncome: 500,
+      categoryBreakdown: [{ _id: 'Food', total: 500 }],
+    });
   });
 });

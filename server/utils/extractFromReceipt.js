@@ -1,4 +1,3 @@
-// backend/utils/extractFromReceipt.js
 const fs = require('fs');
 const path = require('path');
 const pdfParse = require('pdf-parse');
@@ -103,7 +102,7 @@ Receipt Text:
 };
 
 const cleanJSONResponse = (rawText) => {
-  return rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+  return rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
 };
 
 const sendToGemini = async (text, mode) => {

@@ -2,10 +2,13 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
+/**
+ * Provides authentication state and methods to the app.
+ */
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true); // ✅ NEW
+  const [loading, setLoading] = useState(true); // Prevent premature rendering
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -14,7 +17,7 @@ export const AuthProvider = ({ children }) => {
       setToken(storedToken);
       setIsLoggedIn(true);
     }
-    setLoading(false); // ✅ Always end loading
+    setLoading(false);
   }, []);
 
   const login = (newToken) => {
@@ -36,4 +39,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+/**
+ * Hook for consuming AuthContext
+ */
 export const useAuth = () => useContext(AuthContext);
