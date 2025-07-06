@@ -2,14 +2,22 @@ const express = require('express');
 const multer = require('multer');
 const { uploadReceipt } = require('../controllers/uploadController');
 const protect = require('../middleware/authMiddleware');
+const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
 
 // Configure multer for file upload
+const uploadPath = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
+  destination: (req, file, cb) => cb(null, uploadPath),
   filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
 });
+
 const upload = multer({ storage });
 
 /**
