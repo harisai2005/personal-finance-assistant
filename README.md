@@ -1,5 +1,6 @@
 
-# 💰 Personal Finance Assistant
+# [💰 Personal Finance Assistant](https://personal-finance-assistant.harisai.me)
+
 
 A full-stack MERN (MongoDB, Express, React, Node.js) web app to **track, manage, and analyze personal financial activities**. Users can log expenses/incomes, upload receipts (POS or bank statement PDFs), auto-extract transaction data using GenAI (Google Gemini), and view categorized summaries with charts.
 
