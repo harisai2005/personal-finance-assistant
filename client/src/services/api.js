@@ -4,7 +4,7 @@ import axios from 'axios';
 // 🌐 Determine base URL dynamically
 const isLocal = window.location.hostname === 'localhost';
 const baseURL = isLocal
-  ? 'http://localhost:5000/api'
+  ? 'https://personal-finance-assistant-n8lv.onrender.com/'
   : `${window.location.origin}/api`; // Fallback for deployed env
 
 // 🛠️ Create centralized Axios instance
