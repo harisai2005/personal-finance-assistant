@@ -1,11 +1,8 @@
 // src/services/api.js
 import axios from 'axios';
 
-// 🌐 Determine base URL dynamically
-const isLocal = window.location.hostname === 'localhost';
-const baseURL = isLocal
-  ? 'https://personal-finance-assistant-n8lv.onrender.com/api' // Use your actual local API URL here
-  : `${window.location.origin}/api`; // Fallback for deployed env
+// 🌍 Always point to deployed backend
+const baseURL = 'https://personal-finance-assistant-n8lv.onrender.com/api'; // ✅ your backend API base
 
 // 🛠️ Create centralized Axios instance
 const API = axios.create({ baseURL });
