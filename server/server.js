@@ -13,7 +13,10 @@ connectDB();
 const app = express();
 
 // ✅ CORS configuration for Vercel frontend
-const allowedOrigin = 'https://personal-finance-assistant-74b8b38c8-harisai2005s-projects.vercel.app';
+const allowedOrigin = [
+  'http://localhost:3000', // for local dev
+  'https://personal-finance-assistant-74b8b38c8-harisai2005s-projects.vercel.app', // Vercel
+];
 
 app.use(cors({
   origin: allowedOrigin,

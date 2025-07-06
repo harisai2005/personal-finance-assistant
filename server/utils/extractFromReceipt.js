@@ -108,7 +108,6 @@ const cleanJSONResponse = (rawText) => {
 const sendToGemini = async (text, mode) => {
   try {
     console.log("📤 Sending to Gemini via official SDK...");
-
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
