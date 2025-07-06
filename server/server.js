@@ -18,6 +18,7 @@ const corsOptions = {
     const allowedOrigins = [
       'http://localhost:3000',
       'https://personal-finance-assistant-nine.vercel.app',
+      'https://personal-finance-assistant.harisai.me'
     ];
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);

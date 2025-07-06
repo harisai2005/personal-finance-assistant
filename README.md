@@ -13,7 +13,6 @@ A full-stack MERN (MongoDB, Express, React, Node.js) web app to **track, manage,
   * POS Receipts → Auto-extract single transaction
   * Transaction History (bank PDFs) → Auto-insert multiple transactions
 * 📊 Dashboard with Summary & Graphs (Pie/Bar)
-* 📆 Filter by Date Range
 * 📄 Paginated Transaction List
 * 📦 Receipt Extraction using:
   * Tesseract OCR (image-based)
@@ -42,8 +41,7 @@ personal-finance-assistant/
 │   ├── src/
 │   │   ├── components/
 │   │   ├── pages/
-│   │   ├── services/
-│   │   └── utils/
+│   │   └── services/
 │   └── public/
 ├── server/                   # Node/Express Backend
 │   ├── controllers/
@@ -62,7 +60,7 @@ personal-finance-assistant/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/personal-finance-assistant.git
+git clone https://github.com/harisai2005/personal-finance-assistant.git
 cd personal-finance-assistant
 ```
 
@@ -99,9 +97,26 @@ npm start  # open React app on http://localhost:3000
 
 ## 📸 Screenshots
 
-| Dashboard                               | Add Transaction             | Upload Receipt                    |
-| --------------------------------------- | --------------------------- | --------------------------------- |
-| ![dashboard](screenshots/dashboard.png) | ![add](screenshots/add.png) | ![upload](screenshots/upload.png) |
+### 🔐 Login
+![login](screenshots/login.png)
+
+### 📝 Register
+![register](screenshots/register.png)
+
+### 📊 Dashboard
+![dashboard](screenshots/dashboard.png)
+
+### ➕ Add Transaction
+![add](screenshots/add.png)
+
+### 📂 Upload Receipt
+![upload](screenshots/upload.png)
+
+### 📋 Transactions
+![transactions](screenshots/transactions.png)
+
+### 📈 Analytics
+![analytics](screenshots/analytics.png)
 
 ---
 
