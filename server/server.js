@@ -11,7 +11,15 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
+
+// ✅ CORS configuration for Vercel frontend
+const allowedOrigin = 'https://personal-finance-assistant-74b8b38c8-harisai2005s-projects.vercel.app';
+
+app.use(cors({
+  origin: allowedOrigin,
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
