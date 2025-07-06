@@ -1,11 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const pdfParse = require('pdf-parse');
-const { createCanvas } = require('canvas');
 const Tesseract = require('tesseract.js');
-const { convert } = require('pdf-poppler');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Transaction = require('../models/transaction');
+const puppeteer = require('puppeteer');
 require('dotenv').config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -28,24 +27,27 @@ const extractTextFromPDF = async (filePath) => {
 };
 
 const convertPDFToImage = async (filePath) => {
-  const outDir = path.dirname(filePath);
-  const outPrefix = path.basename(filePath, '.pdf');
-  const options = {
-    format: 'png',
-    out_dir: outDir,
-    out_prefix: outPrefix,
-    page: 1,
-  };
+  console.log('🖼️ Converting PDF to image using Puppeteer...');
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
 
-  console.log('🖼️ Converting PDF to image for OCR...');
-  await convert(filePath, options);
+  const page = await browser.newPage();
+  const pdfBuffer = fs.readFileSync(filePath);
+  const dataUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
+  await page.goto(dataUrl, { waitUntil: 'networkidle0' });
 
-  const expectedImagePath = path.join(outDir, `${outPrefix}-1.png`);
-  if (!fs.existsSync(expectedImagePath)) {
-    throw new Error(`Converted image not found: ${expectedImagePath}`);
+  const screenshotPath = path.join(__dirname, 'pdf_screenshot.png');
+  await page.screenshot({ path: screenshotPath, fullPage: true });
+
+  await browser.close();
+
+  if (!fs.existsSync(screenshotPath)) {
+    throw new Error(`Screenshot image not found: ${screenshotPath}`);
   }
 
-  return fs.readFileSync(expectedImagePath);
+  return fs.readFileSync(screenshotPath);
 };
 
 const runOCR = async (imageBuffer) => {
@@ -101,9 +103,8 @@ Receipt Text:
 `.trim();
 };
 
-const cleanJSONResponse = (rawText) => {
-  return rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-};
+const cleanJSONResponse = (rawText) =>
+  rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
 const sendToGemini = async (text, mode) => {
   try {
@@ -125,7 +126,6 @@ const sendToGemini = async (text, mode) => {
   }
 };
 
-// ✅ Main Extraction Handler
 module.exports = async function extractFromReceipt(filePath, userId, mode = 'pos') {
   try {
     let text = '';
@@ -147,7 +147,6 @@ module.exports = async function extractFromReceipt(filePath, userId, mode = 'pos
 
     if (mode === 'history') {
       if (!Array.isArray(parsed)) throw new Error('Invalid transaction array from Gemini');
-
       const docs = await Promise.all(parsed.map(async (txn) => {
         const created = await Transaction.create({
           userId,
@@ -156,21 +155,27 @@ module.exports = async function extractFromReceipt(filePath, userId, mode = 'pos
         });
         return created;
       }));
-
       console.log(`✅ Inserted ${docs.length} transactions from history`);
       return docs;
     }
 
-    // POS mode
-    const vendor = parsed.vendor || 'Unknown';
-    const invoiceDate = new Date(parsed.invoice_date || Date.now());
-    const totalAmount = parsed.total_amount || 0;
+    // POS Mode
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('Invalid POS receipt response from Gemini');
+    }
+
+    const {
+      vendor = 'Unknown',
+      invoice_date,
+      total_amount = 0,
+      items = []
+    } = parsed;
+
+    const invoiceDate = new Date(invoice_date || Date.now());
 
     let description = 'Receipt Items';
-    if (Array.isArray(parsed.items)) {
-      description = parsed.items.map(item =>
-        `${item.description || 'Item'}`
-      ).join(', ');
+    if (Array.isArray(items) && items.length > 0) {
+      description = items.map(item => item?.description || 'Item').join(', ');
     }
 
     const category = /food|zomato|swiggy|milk|bread|combo/i.test(description) ? 'Food' : 'General';
@@ -178,7 +183,7 @@ module.exports = async function extractFromReceipt(filePath, userId, mode = 'pos
     const tx = await Transaction.create({
       userId,
       type: 'expense',
-      amount: totalAmount,
+      amount: total_amount,
       description,
       category,
       date: invoiceDate,
