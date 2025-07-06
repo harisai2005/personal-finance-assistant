@@ -10,16 +10,35 @@ exports.addTransaction = async (req, res) => {
 };
 
 exports.getTransactions = async (req, res) => {
-  const { start, end } = req.query;
-  const filter = {
-    userId: req.user._id,
-    ...(start && end && {
-      date: { $gte: new Date(start), $lte: new Date(end) }
-    })
-  };
-  const transactions = await Transaction.find(filter).sort({ date: -1 });
-  res.json(transactions);
+  try {
+    const { start, end, page = 1, limit = 10 } = req.query;
+
+    const filter = {
+      userId: req.user._id,
+      ...(start && end && {
+        date: { $gte: new Date(start), $lte: new Date(end) }
+      })
+    };
+
+    const total = await Transaction.countDocuments(filter);
+    const transactions = await Transaction.find(filter)
+      .sort({ date: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    res.json({
+      data: transactions,
+      currentPage: Number(page),
+      totalPages: Math.ceil(total / limit),
+      totalCount: total // ✅ Return total count explicitly
+    });
+  } catch (err) {
+    console.error("❌ getTransactions error:", err);
+    res.status(500).json({ message: 'Server Error' });
+  }
 };
+
+
 
 // controllers/transactionController.js
 exports.getSummary = async (req, res) => {

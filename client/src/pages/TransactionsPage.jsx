@@ -1,26 +1,68 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Table, Button, Card } from 'react-bootstrap';
+import { Container, Table, Button, Card, Pagination } from 'react-bootstrap';
 import { getTransactions, deleteTransaction } from '../services/transactionService';
+import { useNavigate } from 'react-router-dom';
 
 const TransactionsPage = () => {
   const [transactions, setTransactions] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+  const navigate = useNavigate();
 
   const formatINR = (value) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value);
 
-  const fetchData = async () => {
-    const res = await getTransactions('2024-01-01', '2025-12-31');
-    setTransactions(res.data || []);
+  const fetchData = async (page = 1) => {
+    const res = await getTransactions('2024-01-01', '2025-12-31', page, ITEMS_PER_PAGE);
+    setTransactions(res.data.data || []);
+    setCurrentPage(res.data.currentPage);
+    setTotalPages(res.data.totalPages);
   };
 
   const handleDelete = async (id) => {
     await deleteTransaction(id);
-    fetchData();
+    fetchData(currentPage);
+  };
+
+  const handleEdit = (txn) => {
+    localStorage.setItem('edit_txn', JSON.stringify(txn));
+    navigate('/add');
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(currentPage);
+  }, [currentPage]);
+
+  const renderPagination = () => {
+    const items = [];
+
+    if (currentPage > 1) {
+      items.push(
+        <Pagination.Prev key="prev" onClick={() => setCurrentPage(currentPage - 1)} />
+      );
+    }
+
+    for (let i = 1; i <= totalPages; i++) {
+      items.push(
+        <Pagination.Item
+          key={i}
+          active={i === currentPage}
+          onClick={() => setCurrentPage(i)}
+        >
+          {i}
+        </Pagination.Item>
+      );
+    }
+
+    if (currentPage < totalPages) {
+      items.push(
+        <Pagination.Next key="next" onClick={() => setCurrentPage(currentPage + 1)} />
+      );
+    }
+
+    return <Pagination className="justify-content-center mt-3">{items}</Pagination>;
+  };
 
   return (
     <Container className="mt-4">
@@ -41,7 +83,7 @@ const TransactionsPage = () => {
           <tbody>
             {transactions.map((txn, idx) => (
               <tr key={txn._id}>
-                <td>{idx + 1}</td>
+                <td>{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
                 <td>{new Date(txn.date).toLocaleDateString()}</td>
                 <td>{txn.description}</td>
                 <td>{txn.category}</td>
@@ -50,7 +92,19 @@ const TransactionsPage = () => {
                 </td>
                 <td>{formatINR(txn.amount)}</td>
                 <td>
-                  <Button variant="danger" size="sm" onClick={() => handleDelete(txn._id)}>
+                  <Button
+                    variant="warning"
+                    size="sm"
+                    className="me-2"
+                    onClick={() => handleEdit(txn)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleDelete(txn._id)}
+                  >
                     Delete
                   </Button>
                 </td>
@@ -58,6 +112,7 @@ const TransactionsPage = () => {
             ))}
           </tbody>
         </Table>
+        {totalPages > 1 && renderPagination()}
       </Card>
     </Container>
   );

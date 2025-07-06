@@ -9,6 +9,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [summary, setSummary] = useState({ income: 0, expenses: 0, net: 0 });
   const [transactions, setTransactions] = useState([]);
+  const [transactionCount, setTransactionCount] = useState(0); // ✅ Track real count
 
   const formatINR = (value) =>
     new Intl.NumberFormat("en-IN", {
@@ -19,37 +20,22 @@ const HomePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        console.log("📦 Token in HomePage fetch:", token);
-
         const sumRes = await getSummary();
-        const txnRes = await getTransactions("2024-01-01", "2025-12-31");
+        const txnRes = await getTransactions("2024-01-01", "2025-12-31", 1, 3); // ✅ Get only 3 for preview
 
-        console.log("📊 Summary Raw Response:", sumRes?.data);
-        console.log("📄 Transactions Raw Response:", txnRes?.data);
+        let income = 0, expenses = 0, net = 0;
 
-        let income = 0;
-        let expenses = 0;
-        let net = 0;
-
-        if (
-          typeof sumRes.data === "object" &&
-          sumRes.data !== null &&
-          ("totalIncome" in sumRes.data || "totalExpenses" in sumRes.data)
-        ) {
+        if (sumRes.data) {
           income = sumRes.data.totalIncome || 0;
           expenses = sumRes.data.totalExpenses || 0;
           net = sumRes.data.netIncome ?? (income - expenses);
-        } else {
-          console.warn("⚠️ Unexpected summary data format:", sumRes.data);
         }
-
-        console.log("✅ Parsed Summary ->", { income, expenses, net });
 
         setSummary({ income, expenses, net });
 
-        // Store full transactions
-        setTransactions(txnRes?.data || []);
+        // ✅ Extract full count and preview list
+        setTransactions(Array.isArray(txnRes?.data?.data) ? txnRes.data.data : []);
+        setTransactionCount(txnRes?.data?.totalCount || 0);
       } catch (err) {
         console.error("❌ Fetch error:", err?.response?.data || err.message);
         alert("Session expired. Please login again.");
@@ -86,7 +72,7 @@ const HomePage = () => {
           <StatCard title="Net Income" value={formatINR(summary.net)} icon={<Wallet />} />
         </Col>
         <Col md={3}>
-          <StatCard title="Transactions" value={transactions.length} icon={<List />} />
+          <StatCard title="Transactions" value={transactionCount} icon={<List />} />
         </Col>
       </Row>
 
@@ -96,7 +82,7 @@ const HomePage = () => {
             <Card.Header><strong>Recent Transactions</strong></Card.Header>
             <Card.Body>
               <ListGroup>
-                {transactions.slice(0, 3).map((t, i) => (
+                {transactions.map((t, i) => (
                   <ListGroup.Item key={i} className="d-flex justify-content-between">
                     <div>
                       <strong>{t.description || "No description"}</strong>

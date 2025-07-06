@@ -1,13 +1,11 @@
 import API from './api';
 
 // Add a new transaction
-export const addTransaction = (data) => {
-  return API.post('/transactions', data);
-};
+export const addTransaction = (data) => API.post('/transactions', data);
 
-// Get transactions with optional date filtering
-export const getTransactions = (start, end) => {
-  return API.get(`/transactions?start=${start}&end=${end}`);
+// Get transactions with optional pagination
+export const getTransactions = (start, end, page = 1, limit = 10) => {
+  return API.get(`/transactions?start=${start}&end=${end}&page=${page}&limit=${limit}`);
 };
 
 // Get category-wise summary
@@ -20,23 +18,14 @@ export const getSummary = async () => {
   }
 };
 
-
 // Update a transaction by ID
-export const updateTransaction = (id, data) => {
-  return API.put(`/transactions/${id}`, data);
-};
+export const updateTransaction = (id, data) => API.put(`/transactions/${id}`, data);
 
 // Delete a transaction by ID
-export const deleteTransaction = (id) => {
-  return API.delete(`/transactions/${id}`);
-};
+export const deleteTransaction = (id) => API.delete(`/transactions/${id}`);
 
-// ✅ Get daily expenses (last 7 days)
-export const getDailyExpenses = () => {
-  return API.get('/transactions/daily');
-};
+// Get daily expenses (last 7 days)
+export const getDailyExpenses = () => API.get('/transactions/daily');
 
-// ✅ Get full analytics (if supported by backend)
-export const getAnalytics = () => {
-  return API.get('/transactions/analytics');
-};
+// Get analytics (optional)
+export const getAnalytics = () => API.get('/transactions/analytics');

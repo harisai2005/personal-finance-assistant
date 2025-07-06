@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Container, Form, Button, Card } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Container, Form, Button, Card, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { addTransaction } from '../services/transactionService';
+import { addTransaction, updateTransaction } from '../services/transactionService';
 import { uploadReceipt } from '../services/uploadService';
 
 const AddTransactionPage = () => {
@@ -16,15 +16,57 @@ const AddTransactionPage = () => {
 
   const [receiptFile, setReceiptFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('edit_txn');
+    if (saved) {
+      const txn = JSON.parse(saved);
+      setForm({
+        amount: txn.amount,
+        type: txn.type,
+        category: txn.category,
+        description: txn.description,
+        date: txn.date.split('T')[0],
+      });
+      setEditId(txn._id);
+      setIsEditing(true);
+      localStorage.removeItem('edit_txn');
+    }
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const validate = () => {
+    if (!form.amount || Number(form.amount) <= 0) return 'Amount must be greater than zero.';
+    if (!form.category.trim()) return 'Category is required.';
+    if (!form.description.trim()) return 'Description is required.';
+    if (!form.date) return 'Date is required.';
+    if (new Date(form.date) > new Date()) return 'Date cannot be in the future.';
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await addTransaction(form);
-    navigate('/');
+    const validationError = validate();
+    if (validationError) return setError(validationError);
+    setError('');
+
+    try {
+      if (isEditing) {
+        await updateTransaction(editId, form);
+      } else {
+        await addTransaction(form);
+      }
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+      setError(isEditing ? 'Failed to update transaction.' : 'Failed to add transaction.');
+    }
   };
 
   const handleReceiptUpload = async () => {
@@ -53,8 +95,8 @@ const AddTransactionPage = () => {
   return (
     <Container className="mt-4">
       <Card className="shadow p-4">
-        <h4>Add New Transaction</h4>
-
+        <h4>{isEditing ? 'Edit Transaction' : 'Add New Transaction'}</h4>
+        {error && <Alert variant="danger">{error}</Alert>}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
             <Form.Label>Upload Receipt (optional)</Form.Label>
@@ -101,7 +143,9 @@ const AddTransactionPage = () => {
             <Form.Control type="date" name="date" value={form.date} onChange={handleChange} required />
           </Form.Group>
 
-          <Button variant="success" type="submit">Add Transaction</Button>
+          <Button variant="success" type="submit">
+            {isEditing ? 'Update Transaction' : 'Add Transaction'}
+          </Button>
         </Form>
       </Card>
     </Container>

@@ -1,29 +1,48 @@
-.custom-navbar {
-  padding: 1rem 2rem;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: transparent;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
+/* styles/Navbar.css */
+
+/* Base navbar link style */
+.custom-navbar .nav-link {
+  font-weight: 500;
+  color: #555;
+  padding: 0.55rem 1.1rem;
+  margin: 0 0.3rem;
+  border-radius: 8px;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  text-decoration: none !important;
 }
 
-.navbar-title {
+/* On hover: subtle background + text color */
+.custom-navbar .nav-link:hover {
+  background-color: rgba(0, 123, 255, 0.08); /* subtle blue shade */
+  color: #007bff;
+}
+
+/* Active tab: modern filled style */
+.custom-navbar .active-link {
+  background-color: #007bff !important;
+  color: #fff !important;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+}
+
+/* Brand Styling */
+.custom-navbar .navbar-brand {
   font-weight: 700;
-  font-size: 1.4rem;
-  color: #fff;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  font-size: 1.25rem;
+  color: #0d6efd !important;
+}
+
+.custom-navbar .navbar-brand:hover {
+  color: #0a58ca !important;
   text-decoration: none;
 }
 
-.nav-link-text {
-  color: #fff;
+/* Logout button match */
+.custom-navbar .btn-outline-danger {
   font-weight: 500;
-  font-size: 1rem;
-  transition: color 0.3s ease;
-}
-
-.nav-link-text:hover {
-  color: #ffd966;
+  padding: 0.4rem 0.9rem;
+  margin-left: 1rem;
+  border-radius: 6px;
 }
