@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Create a centralized axios instance
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api', // 🔗 Base URL for all backend endpoints
+  baseURL: 'https://personal-finance-assistant-n8lv.onrender.com', // 🔗 Base URL for all backend endpoints
 });
 
 // Attach auth token to each request if present
