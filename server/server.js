@@ -13,25 +13,25 @@ connectDB();
 const app = express();
 
 // ✅ CORS configuration for Vercel frontend
-const allowedOrigin = [
-  'http://localhost:3000', // for local dev
-  'https://personal-finance-assistant-74b8b38c8-harisai2005s-projects.vercel.app', // Vercel
+const allowedOrigins = [
+  'http://localhost:3000', // local dev
+  'https://personal-finance-assistant-nine.vercel.app', // ✅ your actual deployed frontend
 ];
 
 app.use(cors({
-  origin: allowedOrigin,
+  origin: allowedOrigins,
   credentials: true,
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// ✅ API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// Error Middleware
+// ✅ Error middleware
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;

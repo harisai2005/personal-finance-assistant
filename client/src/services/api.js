@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // 🌍 Always point to deployed backend
-const baseURL = 'https://personal-finance-assistant-n8lv.onrender.com/api'; // ✅ your backend API base
+const baseURL = 'https://personal-finance-assistant-n8lv.onrender.com/api'; // ✅ Render backend
 
 // 🛠️ Create centralized Axios instance
 const API = axios.create({ baseURL });
