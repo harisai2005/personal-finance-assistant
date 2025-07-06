@@ -13,15 +13,26 @@ connectDB();
 const app = express();
 
 // ✅ Correct and safe CORS config
-app.use(cors({
-  origin: 'https://personal-finance-assistant-nine.vercel.app', // your deployed frontend
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://personal-finance-assistant-nine.vercel.app',
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+  credentials: true,
+};
 
-// ✅ Handle preflight OPTIONS for all routes
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // ✅ Handles preflight
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
